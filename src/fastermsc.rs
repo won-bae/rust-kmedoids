@@ -1,7 +1,7 @@
 use crate::arrayadapter::ArrayAdapter;
 use crate::util::*;
 use core::ops::AddAssign;
-use num_traits::{Signed, Zero, Float};
+use num_traits::{Signed, Zero, Float, FromPrimitive};
 use std::convert::From;
 
 #[inline]
@@ -48,11 +48,12 @@ fn _loss<N, L>(a: N, b: N) -> L
 pub fn fastermsc<M, N, L>(
 	mat: &M,
 	med: &mut Vec<usize>,
+	n_fixed_meds: usize,
 	maxiter: usize,
 ) -> (L, Vec<usize>, usize, usize)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + Signed + AddAssign + From<N> + From<u32>,
+		L: Float + Signed + AddAssign + From<N> + From<u32> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let (n, k) = (mat.len(), med.len());
@@ -68,7 +69,7 @@ pub fn fastermsc<M, N, L>(
 	debug_assert_assignment_th(mat, med, &data);
 
 	let mut removal_loss = vec![L::zero(); k];
-	update_removal_loss(&data, &mut removal_loss);
+	update_removal_loss(&data, &mut removal_loss, n_fixed_meds);
 	let (mut lastswap, mut n_swaps, mut iter) = (n, 0, 0);
 	while iter < maxiter {
 		iter += 1;
@@ -88,7 +89,7 @@ pub fn fastermsc<M, N, L>(
 			lastswap = j;
 			// perform the swap
 			loss = do_swap(mat, med, &mut data, b, j);
-			update_removal_loss(&data, &mut removal_loss);
+			update_removal_loss(&data, &mut removal_loss, n_fixed_meds);
 		}
 		if n_swaps == swaps_before || loss >= lastloss {
 			break; // converged
@@ -104,7 +105,7 @@ pub fn fastermsc<M, N, L>(
 pub(crate) fn initial_assignment<M, N, L>(mat: &M, med: &[usize]) -> (L, Vec<Reco<N>>)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + AddAssign + From<N>,
+		L: Float + AddAssign + From<N> + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let (n, k) = (mat.len(), med.len());
@@ -149,7 +150,7 @@ pub(crate) fn find_best_swap<M, N, L>(
 ) -> (L, usize)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + AddAssign + From<N>,
+		L: Float + AddAssign + From<N> + FromPrimitive + std::fmt::Display, 
 		M: ArrayAdapter<N>,
 {
 	let mut ploss = removal_loss.to_vec();
@@ -180,10 +181,10 @@ pub(crate) fn find_best_swap<M, N, L>(
 }
 
 /// Update the loss when removing each medoid
-pub(crate) fn update_removal_loss<N, L>(data: &[Reco<N>], loss: &mut Vec<L>)
+pub(crate) fn update_removal_loss<N, L>(data: &[Reco<N>], loss: &mut Vec<L>, n_fixed_meds: usize)
 	where
 		N: Zero + Copy,
-		L: Float + Signed + AddAssign + From<N>,
+		L: Float + Signed + AddAssign + From<N> + FromPrimitive + std::fmt::Display,
 {
 	loss.fill(L::zero()); // stable since 1.50
 	for rec in data.iter() {
@@ -191,6 +192,14 @@ pub(crate) fn update_removal_loss<N, L>(data: &[Reco<N>], loss: &mut Vec<L>)
 		loss[rec.seco.i as usize] += _loss::<N, L>(rec.near.d, rec.seco.d) - _loss::<N, L>(rec.near.d, rec.third.d);
 		// as N might be unsigned
 	}
+
+	if n_fixed_meds > 0 {
+		let value_10000 = L::from_i32(10000).unwrap(); // Convert 10000 to L
+
+		for i in 0..n_fixed_meds {
+        	loss[i] = value_10000;
+    	}
+    }
 }
 
 /// Update the third nearest medoid information
@@ -233,7 +242,7 @@ pub(crate) fn do_swap<M, N, L>(
 ) -> L
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + Signed + AddAssign + From<N>,
+		L: Float + Signed + AddAssign + From<N> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let n = mat.len();
@@ -307,7 +316,7 @@ pub(crate) fn fastermsc_k2<M, N, L>(
 ) -> (L, Vec<usize>, usize, usize)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + Signed + AddAssign + From<N> + From<u32>,
+		L: Float + Signed + AddAssign + From<N> + From<u32> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let (n, k) = (mat.len(), med.len());
@@ -345,7 +354,7 @@ pub(crate) fn fastermsc_k2<M, N, L>(
 pub(crate) fn initial_assignment_k2<M, N, L>(mat: &M, med: &[usize]) -> (L, Vec<usize>, Vec<(N,N)>)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + AddAssign + From<N>,
+		L: Float + AddAssign + From<N> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let (n, k) = (mat.len(), med.len());
@@ -380,7 +389,7 @@ pub(crate) fn find_best_swap_k2<M, N, L>(
 ) -> (L, usize)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + AddAssign + From<N>,
+		L: Float + AddAssign + From<N> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let mut ploss = vec![L::zero(); 2];
@@ -406,7 +415,7 @@ pub(crate) fn do_swap_k2<M, N, L>(
 ) -> L
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + Signed + AddAssign + From<N>,
+		L: Float + Signed + AddAssign + From<N> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let n = mat.len();

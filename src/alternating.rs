@@ -1,7 +1,7 @@
 use crate::arrayadapter::ArrayAdapter;
 use crate::util::*;
 use core::ops::AddAssign;
-use num_traits::{Signed, Zero};
+use num_traits::{Signed, Zero, FromPrimitive};
 use std::convert::From;
 
 /// Run the Alternating algorithm, a k-means-style alternate optimization.
@@ -40,7 +40,7 @@ use std::convert::From;
 pub fn alternating<M, N, L>(mat: &M, med: &mut [usize], maxiter: usize) -> (L, Vec<usize>, usize)
 where
 	N: Zero + PartialOrd + Copy,
-	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N>,
+	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N>,
 {
 	let mut assi = vec![usize::MAX; mat.len()];
@@ -66,7 +66,7 @@ where
 pub(crate) fn assign_nearest<M, N, L>(mat: &M, med: &[usize], data: &mut [usize]) -> L
 where
 	N: PartialOrd + Copy,
-	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N>,
+	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N>,
 {
 	let n = mat.len();

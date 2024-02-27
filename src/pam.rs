@@ -2,7 +2,7 @@ use crate::arrayadapter::ArrayAdapter;
 use crate::fasterpam::{do_swap, initial_assignment};
 use crate::util::*;
 use core::ops::AddAssign;
-use num_traits::{Signed, Zero};
+use num_traits::{Signed, Zero, FromPrimitive};
 use std::convert::From;
 
 /// Run the original PAM SWAP algorithm (no BUILD, but given initial medoids).
@@ -40,11 +40,12 @@ use std::convert::From;
 pub fn pam_swap<M, N, L>(
 	mat: &M,
 	med: &mut Vec<usize>,
+	_n_fixed_meds: usize,
 	maxiter: usize,
 ) -> (L, Vec<usize>, usize, usize)
 where
 	N: Zero + PartialOrd + Copy,
-	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N>,
+	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N>,
 {
 	let (loss, mut data) = initial_assignment(mat, med);
@@ -82,7 +83,7 @@ where
 pub fn pam_build<M, N, L>(mat: &M, k: usize) -> (L, Vec<usize>, Vec<usize>)
 where
 	N: Zero + PartialOrd + Copy,
-	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N>,
+	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N>,
 {
 	let n = mat.len();
@@ -131,7 +132,7 @@ where
 pub fn pam<M, N, L>(mat: &M, k: usize, maxiter: usize) -> (L, Vec<usize>, Vec<usize>, usize, usize)
 where
 	N: Zero + PartialOrd + Copy,
-	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N>,
+	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N>,
 {
 	let n = mat.len();
@@ -156,7 +157,7 @@ fn pam_optimize<M, N, L>(
 ) -> (L, Vec<usize>, usize, usize)
 where
 	N: Zero + PartialOrd + Copy,
-	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N>,
+	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N>,
 {
 	let (n, k) = (mat.len(), med.len());
@@ -201,7 +202,7 @@ where
 fn find_best_swap_pam<M, N, L>(mat: &M, med: &[usize], data: &[Rec<N>], j: usize) -> (L, usize)
 where
 	N: Zero + PartialOrd + Copy,
-	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N>,
+	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N>,
 {
 	let recj = &data[j];
@@ -243,7 +244,7 @@ pub(crate) fn pam_build_initialize<M, N, L>(
 ) -> L
 where
 	N: Zero + PartialOrd + Copy,
-	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N>,
+	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N>,
 {
 	let n = mat.len();

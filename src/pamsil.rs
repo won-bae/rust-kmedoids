@@ -3,7 +3,7 @@ use crate::alternating::assign_nearest;
 use crate::util::*;
 use crate::silhouette::*;
 use core::ops::AddAssign;
-use num_traits::{Signed, Zero, Float};
+use num_traits::{Signed, Zero, Float, FromPrimitive};
 use std::convert::From;
 
 /// Run the original PAMSIL SWAP algorithm (no BUILD, but given initial medoids).
@@ -41,7 +41,7 @@ pub fn pamsil_swap<M, N, L>(
 ) -> (L, Vec<usize>, usize, usize)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + Signed + AddAssign + From<N> + From<u32>,
+		L: Float + Signed + AddAssign + From<N> + From<u32> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let n = mat.len();
@@ -82,7 +82,7 @@ pub fn pamsil_swap<M, N, L>(
 pub fn pamsil<M, N, L>(mat: &M, k: usize, maxiter: usize) -> (L, Vec<usize>, Vec<usize>, usize, usize)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + From<u32>,
+		L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + From<u32> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let n = mat.len();
@@ -106,7 +106,7 @@ fn pamsil_optimize<M, N, L>(
 ) -> (L, usize, usize)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + From<u32>,
+		L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + From<u32> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let (n, k) = (mat.len(), med.len());
@@ -155,7 +155,7 @@ fn pamsil_build_initialize<M, N, L>(
 ) -> L
 	where
 		N: Zero + PartialOrd + Copy,
-		L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N>,
+		L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let n = mat.len();

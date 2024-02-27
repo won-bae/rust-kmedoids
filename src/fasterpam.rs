@@ -1,8 +1,9 @@
 use crate::arrayadapter::ArrayAdapter;
 use crate::util::*;
 use core::ops::AddAssign;
-use num_traits::{Signed, Zero};
+use num_traits::{Signed, Zero, FromPrimitive};
 use std::convert::From;
+
 
 /// Run the FasterPAM algorithm.
 ///
@@ -44,7 +45,7 @@ pub fn fasterpam<M, N, L>(
 ) -> (L, Vec<usize>, usize, usize)
 where
 	N: Zero + PartialOrd + Copy,
-	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N>,
+	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N>,
 {
 	let (n, k) = (mat.len(), med.len());
@@ -56,12 +57,12 @@ where
 	let (mut loss, mut data) = initial_assignment(mat, med);
 	debug_assert_assignment(mat, med, &data);
 	let mut removal_loss = vec![L::zero(); k];
-	update_removal_loss(&data, &mut removal_loss);
+	update_removal_loss(&data, &mut removal_loss, n_fixed_meds);
 	let (mut lastswap, mut n_swaps, mut iter) = (n, 0, 0);
 	while iter < maxiter {
 		iter += 1;
 		let (swaps_before, lastloss) = (n_swaps, loss);
-		for j in 0..n {
+		for j in n_fixed_meds..n {
 			if j == lastswap {
 				break;
 			}
@@ -69,6 +70,7 @@ where
 				continue; // This already is a medoid
 			}
 			let (change, b) = find_best_swap(mat, &removal_loss, &data, j);
+			assert!(b >= n_fixed_meds, "Selected medoid is < n_fixed_meds");
 			if change >= L::zero() {
 				continue; // No improvement
 			}
@@ -76,7 +78,7 @@ where
 			lastswap = j;
 			// perform the swap
 			loss = do_swap(mat, med, &mut data, b, j);
-			update_removal_loss(&data, &mut removal_loss);
+			update_removal_loss(&data, &mut removal_loss, n_fixed_meds);
 		}
 		if n_swaps == swaps_before || loss >= lastloss {
 			break; // converged
@@ -128,7 +130,7 @@ pub fn rand_fasterpam<M, N, L>(
 ) -> (L, Vec<usize>, usize, usize)
 where
 	N: Zero + PartialOrd + Copy,
-	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N>,
+	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N>,
 {
 	let (n, k) = (mat.len(), med.len());
@@ -141,7 +143,7 @@ where
 	debug_assert_assignment(mat, med, &data);
 
 	let mut removal_loss = vec![L::zero(); k];
-	update_removal_loss(&data, &mut removal_loss);
+	update_removal_loss(&data, &mut removal_loss, n_fixed_meds);
 	let (mut lastswap, mut n_swaps, mut iter) = (n, 0, 0);
 	let seq = rand::seq::index::sample(rng, n, n); // random shuffling
 	while iter < maxiter {
@@ -162,7 +164,7 @@ where
 			lastswap = j;
 			// perform the swap
 			loss = do_swap(mat, med, &mut data, b, j);
-			update_removal_loss(&data, &mut removal_loss);
+			update_removal_loss(&data, &mut removal_loss, n_fixed_meds);
 		}
 		if n_swaps == swaps_before || loss >= lastloss {
 			break; // converged
@@ -177,7 +179,7 @@ where
 pub(crate) fn initial_assignment<M, N, L>(mat: &M, med: &[usize]) -> (L, Vec<Rec<N>>)
 where
 	N: Zero + PartialOrd + Copy,
-	L: AddAssign + Zero + PartialOrd + Copy + From<N>,
+	L: AddAssign + Zero + PartialOrd + Copy + From<N> + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N>,
 {
 	let (n, k) = (mat.len(), med.len());
@@ -219,7 +221,7 @@ pub(crate) fn find_best_swap<M, N, L>(
 ) -> (L, usize)
 where
 	N: Zero + PartialOrd + Copy,
-	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N>,
+	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N>,
 {
 	let mut ploss = removal_loss.to_vec();
@@ -237,21 +239,35 @@ where
 			ploss[reco.near.i as usize] += L::from(doj) - L::from(reco.seco.d);
 		}
 	}
+
 	let (b, bloss) = find_min(&mut ploss.iter());
 	(bloss + acc, b) // add the shared accumulator
 }
 
+
+
 /// Update the loss when removing each medoid
-pub(crate) fn update_removal_loss<N, L>(data: &[Rec<N>], loss: &mut Vec<L>)
+pub(crate) fn update_removal_loss<N, L>(data: &[Rec<N>], loss: &mut Vec<L>, n_fixed_meds: usize)
 where
 	N: Zero + Copy,
-	L: AddAssign + Signed + Copy + Zero + From<N>,
+	L: AddAssign + Signed + Copy + Zero + From<N> + FromPrimitive + std::fmt::Display,
 {
 	loss.fill(L::zero()); // stable since 1.50
 	for rec in data.iter() {
 		loss[rec.near.i as usize] += L::from(rec.seco.d) - L::from(rec.near.d);
 		// as N might be unsigned
 	}
+
+	if n_fixed_meds > 0 {
+		let value_10000 = L::from_i32(1000000).unwrap(); // Convert 10000 to L
+		for i in 0..n_fixed_meds {
+        	loss[i] = value_10000;
+    	}
+    }
+    // let ploss = loss.to_vec();
+    // for i in 0..ploss.len() {
+	// 	println!("loss: {}", ploss[i]);
+	// }
 }
 
 /// Update the second nearest medoid information
@@ -293,7 +309,7 @@ pub(crate) fn do_swap<M, N, L>(
 ) -> L
 where
 	N: Zero + PartialOrd + Copy,
-	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N>,
+	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + std::fmt::Display,
 	M: ArrayAdapter<N>,
 {
 	let n = mat.len();

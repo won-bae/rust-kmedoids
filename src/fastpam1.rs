@@ -2,7 +2,7 @@ use crate::arrayadapter::ArrayAdapter;
 use crate::fasterpam::{do_swap, find_best_swap, initial_assignment, update_removal_loss};
 use crate::util::*;
 use core::ops::AddAssign;
-use num_traits::{Signed, Zero};
+use num_traits::{Signed, Zero, FromPrimitive};
 use std::convert::From;
 
 /// Run the FastPAM1 algorithm, which yields the same results as the original PAM.
@@ -42,11 +42,12 @@ use std::convert::From;
 pub fn fastpam1<M, N, L>(
 	mat: &M,
 	med: &mut Vec<usize>,
+	n_fixed_meds: usize,
 	maxiter: usize,
 ) -> (L, Vec<usize>, usize, usize)
 where
 	N: Zero + PartialOrd + Copy,
-	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N>,
+	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N>,
 {
 	let (n, k) = (mat.len(), med.len());
@@ -62,7 +63,7 @@ where
 	while iter < maxiter {
 		iter += 1;
 		let mut best = (L::zero(), usize::MAX, usize::MAX);
-		update_removal_loss(&data, &mut removal_loss);
+		update_removal_loss(&data, &mut removal_loss, n_fixed_meds);
 		for j in 0..n {
 			if j == med[data[j].near.i as usize] {
 				continue; // This already is a medoid

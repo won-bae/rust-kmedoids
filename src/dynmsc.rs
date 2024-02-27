@@ -1,7 +1,7 @@
 use crate::arrayadapter::ArrayAdapter;
 use crate::util::*;
 use core::ops::AddAssign;
-use num_traits::{Signed, Zero, Float};
+use num_traits::{Signed, Zero, Float, FromPrimitive};
 use std::convert::From;
 use crate::fastermsc::{initial_assignment,update_removal_loss,find_best_swap,do_swap,fastermsc_k2};
 
@@ -51,11 +51,12 @@ fn _loss<N, L>(a: N, b: N) -> L
 pub fn dynmsc<M, N, L>(
 	mat: &M,
 	med: &Vec<usize>,
+	n_fixed_meds: usize,
 	maxiter: usize,
 ) -> (L, Vec<usize>, usize, usize, Vec<usize>, Vec<L>)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + Signed + AddAssign + From<N> + From<u32> + std::fmt::Debug,
+		L: Float + Signed + AddAssign + From<N> + From<u32> + std::fmt::Debug + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let mut med = med.clone();
@@ -80,7 +81,7 @@ pub fn dynmsc<M, N, L>(
 	let mut removal_loss = vec![L::zero(); k];
 	let mut return_meds = med.clone();
 	while k >= 3 {
-		update_removal_loss(&data, &mut removal_loss);
+		update_removal_loss(&data, &mut removal_loss, n_fixed_meds);
 		lastswap = n;
 		n_swaps = 0;
 		iter = 0;
@@ -102,7 +103,7 @@ pub fn dynmsc<M, N, L>(
 				lastswap = j;
 				// perform the swap
 				loss = do_swap(mat, &mut med, &mut data, b, j);
-				update_removal_loss(&data, &mut removal_loss);
+				update_removal_loss(&data, &mut removal_loss, n_fixed_meds);
 			}
 			if n_swaps == swaps_before || loss >= lastloss {
 				break; // converged
@@ -177,7 +178,7 @@ pub(crate) fn remove_med<M, N, L>(
 ) -> L
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + Signed + AddAssign + From<N>,
+		L: Float + Signed + AddAssign + From<N> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let l= med.len() - 1;

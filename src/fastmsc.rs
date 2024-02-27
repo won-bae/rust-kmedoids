@@ -3,7 +3,7 @@ use crate::fastermsc::{initial_assignment,update_removal_loss,find_best_swap,do_
 use crate::fastermsc::{initial_assignment_k2,find_best_swap_k2,do_swap_k2};
 use crate::util::*;
 use core::ops::AddAssign;
-use num_traits::{Signed, Zero, Float};
+use num_traits::{Signed, Zero, Float, FromPrimitive};
 use std::convert::From;
 
 /// Run the FastMSC algorithm, which yields the same results as the original PAMMEDSIL.
@@ -43,11 +43,12 @@ use std::convert::From;
 pub fn fastmsc<M, N, L>(
 	mat: &M,
 	med: &mut Vec<usize>,
+	n_fixed_meds: usize,
 	maxiter: usize,
 ) -> (L, Vec<usize>, usize, usize)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + Signed + AddAssign + From<N> + From<u32>,
+		L: Float + Signed + AddAssign + From<N> + From<u32> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let (n, k) = (mat.len(), med.len());
@@ -67,7 +68,7 @@ pub fn fastmsc<M, N, L>(
 	while iter < maxiter {
 		iter += 1;
 		let mut best = (L::zero(), usize::MAX, usize::MAX);
-		update_removal_loss(&data, &mut removal_loss);
+		update_removal_loss(&data, &mut removal_loss, n_fixed_meds);
 		for j in 0..n {
 			if j == med[data[j].near.i as usize] {
 				continue; // This already is a medoid
@@ -102,7 +103,7 @@ fn fastmsc_k2<M, N, L>(
 ) -> (L, Vec<usize>, usize, usize)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + Signed + AddAssign + From<N> + From<u32>,
+		L: Float + Signed + AddAssign + From<N> + From<u32> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let (n, k) = (mat.len(), med.len());

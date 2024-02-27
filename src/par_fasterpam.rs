@@ -4,7 +4,7 @@ use crate::fasterpam::{update_removal_loss, update_second_nearest};
 use crate::util::*;
 use core::ops::AddAssign;
 use ndarray::Array;
-use num_traits::{Signed, Zero};
+use num_traits::{Signed, Zero, FromPrimitive};
 use rayon::prelude::*;
 use std::convert::From;
 use std::sync::{Arc, Mutex};
@@ -49,7 +49,7 @@ pub fn par_fasterpam<M, N, L>(
 ) -> (L, Vec<usize>, usize, usize)
 where
 	N: Zero + PartialOrd + Copy + Sync + Send,
-	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + Sync + Send,
+	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + Sync + Send + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N> + Sync + Send,
 {
 	let (n, k) = (mat.len(), med.len());
@@ -62,7 +62,7 @@ where
 	debug_assert_assignment(mat, med, &data);
 
 	let mut removal_loss = vec![L::zero(); k];
-	update_removal_loss(&data, &mut removal_loss);
+	update_removal_loss(&data, &mut removal_loss, n_fixed_meds);
 	let (mut lastswap, mut n_swaps, mut iter) = (n, 0, 0);
 	let seq = rand::seq::index::sample(rng, n, n); // random shuffling
 	while iter < maxiter {
@@ -83,7 +83,7 @@ where
 			lastswap = j;
 			// perform the swap
 			loss = par_do_swap(mat, med, &mut data, b, j);
-			update_removal_loss(&data, &mut removal_loss);
+			update_removal_loss(&data, &mut removal_loss, n_fixed_meds);
 		}
 		if n_swaps == swaps_before || loss >= lastloss {
 			break; // converged
@@ -98,7 +98,7 @@ where
 fn par_initial_assignment<M, N, L>(mat: &M, med: &[usize]) -> (L, Vec<Rec<N>>)
 where
 	N: Zero + PartialOrd + Copy + Send + Sync,
-	L: AddAssign + Zero + PartialOrd + Copy + From<N> + Send + Sync,
+	L: AddAssign + Zero + PartialOrd + Copy + From<N> + Send + Sync + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N> + Sync,
 {
 	let n = mat.len();
@@ -135,7 +135,7 @@ where
 fn par_find_best_swap<M, N, L>(mat: &M, removal_loss: &[L], data: &[Rec<N>], j: usize) -> (L, usize)
 where
 	N: Zero + PartialOrd + Copy + Sync + Send,
-	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + Sync + Send,
+	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + Sync + Send + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N> + Sync + Send,
 {
 	let n = mat.len();
@@ -188,7 +188,7 @@ fn par_do_swap<M, N, L>(
 ) -> L
 where
 	N: Zero + PartialOrd + Copy + Send + Sync,
-	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + Send + Sync,
+	L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + Send + Sync + FromPrimitive + std::fmt::Display,
 	M: ArrayAdapter<N> + Sync,
 {
 	let n = mat.len();

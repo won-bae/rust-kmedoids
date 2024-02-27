@@ -1,6 +1,6 @@
 use crate::arrayadapter::ArrayAdapter;
 use core::ops::AddAssign;
-use num_traits::{Signed, Zero};
+use num_traits::{Signed, Zero, FromPrimitive};
 
 /// Object id and distance pair
 #[derive(Debug, Copy, Clone)]
@@ -75,7 +75,7 @@ impl<N: Zero> Reco<N> {
 #[inline]
 pub(crate) fn find_min<'a, L: 'a, I: 'a>(a: &mut I) -> (usize, L)
 	where
-		L: PartialOrd + Copy + Zero,
+		L: PartialOrd + Copy + Zero + FromPrimitive,
 		I: std::iter::Iterator<Item = &'a L>,
 {
 	let mut a = a.enumerate();
@@ -92,7 +92,7 @@ pub(crate) fn find_min<'a, L: 'a, I: 'a>(a: &mut I) -> (usize, L)
 #[inline]
 pub(crate) fn find_max<'a, L: 'a, I: 'a>(a: &mut I) -> (usize, L)
 	where
-		L: PartialOrd + Copy + Zero,
+		L: PartialOrd + Copy + Zero + FromPrimitive,
 		I: std::iter::Iterator<Item = &'a L>,
 {
 	let mut a = a.enumerate();
@@ -115,7 +115,7 @@ pub(crate) fn choose_medoid_within_partition<M, N, L>(
 ) -> (bool, L)
 	where
 		N: PartialOrd + Copy,
-		L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N>,
+		L: AddAssign + Signed + Zero + PartialOrd + Copy + From<N> + FromPrimitive,
 		M: ArrayAdapter<N>,
 {
 	let first = med[m];

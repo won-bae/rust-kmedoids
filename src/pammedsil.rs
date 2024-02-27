@@ -2,14 +2,14 @@ use crate::arrayadapter::ArrayAdapter;
 use crate::fastermsc::{do_swap, initial_assignment};
 use crate::util::*;
 use core::ops::AddAssign;
-use num_traits::{Signed, Zero, Float};
+use num_traits::{Signed, Zero, Float, FromPrimitive};
 use std::convert::From;
 
 #[inline]
 fn _loss<N, L>(a: N, b: N) -> L
 	where
 		N: Zero,
-		L: Float + From<N>,
+		L: Float + From<N> + FromPrimitive,
 {
 	if N::is_zero(&a) || N::is_zero(&b) { L::zero() } else { <L as From<N>>::from(a) / <L as From<N>>::from(b) } 
 }
@@ -53,7 +53,7 @@ pub fn pammedsil_swap<M, N, L>(
 ) -> (L, Vec<usize>, usize, usize)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + Signed + AddAssign + From<N> + std::convert::From<u32>,
+		L: Float + Signed + AddAssign + From<N> + std::convert::From<u32> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let (loss, mut data) = initial_assignment(mat, med);
@@ -91,7 +91,7 @@ pub fn pammedsil_swap<M, N, L>(
 pub fn pammedsil<M, N, L>(mat: &M, k: usize, maxiter: usize) -> (L, Vec<usize>, Vec<usize>, usize, usize)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + Signed + AddAssign + From<N> + std::convert::From<u32>,
+		L: Float + Signed + AddAssign + From<N> + std::convert::From<u32> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let n = mat.len();
@@ -116,7 +116,7 @@ fn pammedsil_optimize<M, N, L>(
 ) -> (L, Vec<usize>, usize, usize)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + Signed + AddAssign + From<N> + std::convert::From<u32>,
+		L: Float + Signed + AddAssign + From<N> + std::convert::From<u32> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let (n, k) = (mat.len(), med.len());
@@ -166,7 +166,7 @@ fn pammedsil_optimize<M, N, L>(
 fn find_best_swap_pammedsil<M, N, L>(mat: &M, med: &[usize], data: &[Reco<N>], j: usize) -> (L, usize)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + AddAssign + From<N>,
+		L: Float + AddAssign + From<N> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let recj = &data[j];
@@ -217,7 +217,7 @@ fn find_best_swap_pammedsil<M, N, L>(mat: &M, med: &[usize], data: &[Reco<N>], j
 fn find_best_swap_pammedsil_k2<M, N, L>(mat: &M, med: &[usize], data: &[Reco<N>], j: usize) -> (L, usize)
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + AddAssign + From<N>,
+		L: Float + AddAssign + From<N> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let recj = &data[j];
@@ -268,7 +268,7 @@ fn pammedsil_build_initialize<M, N, L>(
 ) -> L
 	where
 		N: Zero + PartialOrd + Copy,
-		L: Float + Signed + AddAssign + From<N>,
+		L: Float + Signed + AddAssign + From<N> + FromPrimitive + std::fmt::Display,
 		M: ArrayAdapter<N>,
 {
 	let n = mat.len();
