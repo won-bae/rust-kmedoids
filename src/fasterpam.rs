@@ -39,6 +39,7 @@ use std::convert::From;
 pub fn fasterpam<M, N, L>(
 	mat: &M,
 	med: &mut Vec<usize>,
+	n_fixed_med: usize,
 	maxiter: usize,
 ) -> (L, Vec<usize>, usize, usize)
 where
