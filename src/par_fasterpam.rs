@@ -43,6 +43,7 @@ use std::sync::{Arc, Mutex};
 pub fn par_fasterpam<M, N, L>(
 	mat: &M,
 	med: &mut Vec<usize>,
+	n_fixed_meds: usize,
 	maxiter: usize,
 	rng: &mut impl rand::Rng,
 ) -> (L, Vec<usize>, usize, usize)

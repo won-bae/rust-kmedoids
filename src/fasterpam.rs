@@ -39,7 +39,7 @@ use std::convert::From;
 pub fn fasterpam<M, N, L>(
 	mat: &M,
 	med: &mut Vec<usize>,
-	n_fixed_med: usize,
+	n_fixed_meds: usize,
 	maxiter: usize,
 ) -> (L, Vec<usize>, usize, usize)
 where
@@ -122,6 +122,7 @@ where
 pub fn rand_fasterpam<M, N, L>(
 	mat: &M,
 	med: &mut Vec<usize>,
+	n_fixed_meds: usize,
 	maxiter: usize,
 	rng: &mut impl rand::Rng,
 ) -> (L, Vec<usize>, usize, usize)
